@@ -70,6 +70,26 @@ movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
       .count()
 
       res.json({movie: movie, count: moviecount})
+  } else if (req.query.country){
+      const movie =  await movies.db
+      .collection("movieDetails")
+      .find({ countries: req.query.country })
+      .sort( { title: 1 } ) 
+      .skip((page * size) - size)
+      .limit(size)
+      .toArray();
+
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({ countries: req.query.country })
+      .count()
+
+      movie.forEach((item) => {
+        if (item.poster!=null)
+          item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
+      })
+
+      res.json({movie: movie, count: movieCount})
   } else {
       const movie =  await movies.db
       .collection("movieDetails")
@@ -83,13 +103,8 @@ movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
         if (item.poster!=null)
           item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
       })
-
-      const moviecount = await movies.db
-      .collection("movieDetails")
-      .find({})
-      .count()
-
-      res.json({movie: movie, count: moviecount})
+      
+      res.json({movie: movie, count: movie.length})
   }
   } catch (err){
     console.log(err)
@@ -241,12 +256,19 @@ movieRouter.get("/search", authenticate.jwtCheck, async(req, res, next) => {
       .limit(size)  
       .toArray();
 
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({ $or: [ {title: new RegExp(req.query.all, "i")}, 
+        {actors: new RegExp(req.query.all, "i")}, 
+        {plot: new RegExp(req.query.all, "i")} ] })
+      .count()
+
       movie.forEach((item) => {
         if (item.poster!=null)
           item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
       })
 
-      res.json({movie: movie, count: movie.length})
+      res.json({movie: movie, count: movieCount})
     } else if (req.query.title){
       console.log(req.query.title)
       const movie = await movies.db
@@ -257,12 +279,17 @@ movieRouter.get("/search", authenticate.jwtCheck, async(req, res, next) => {
       .limit(size)  
       .toArray();
 
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({ title: new RegExp(req.query.title, "i") })
+      .count()
+
       movie.forEach((item) => {
         if (item.poster!=null)
           item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
       })
 
-      res.json({movie: movie, count: movie.length})
+      res.json({movie: movie, count: movieCount})
     } else if (req.query.actors){
       console.log(req.query.actors)
       const movie = await movies.db
@@ -273,12 +300,17 @@ movieRouter.get("/search", authenticate.jwtCheck, async(req, res, next) => {
       .limit(size)  
       .toArray();
 
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({ actors: new RegExp(req.query.actors, "i") })
+      .count()
+
       movie.forEach((item) => {
         if (item.poster!=null)
         item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
       })
 
-      res.json({movie: movie, count: movie.length})
+      res.json({movie: movie, count: movieCount})
     } else if (req.query.plot){
       console.log(req.query.plot)
       const movie = await movies.db
@@ -289,12 +321,38 @@ movieRouter.get("/search", authenticate.jwtCheck, async(req, res, next) => {
       .limit(size)  
       .toArray();
 
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({ plot: new RegExp(req.query.plot, "i") })
+      .count()
+
       movie.forEach((item) => {
         if (item.poster!=null)
           item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
       })
 
-      res.json({movie: movie, count: movie.length}) 
+      res.json({movie: movie, count: movieCount}) 
+    } else if (req.query.genre){
+      console.log(req.query.genre)
+      const movie = await movies.db
+      .collection("movieDetails")
+      .find({ genres: new RegExp(req.query.genre, "i") })
+      .sort( { "year": -1 } )
+      .skip((page * size) - size)
+      .limit(size)  
+      .toArray();
+
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({ genres: new RegExp(req.query.genre, "i") })
+      .count()
+
+      movie.forEach((item) => {
+        if (item.poster!=null)
+          item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
+      })
+
+      res.json({movie: movie, count: movieCount}) 
     }
   } catch (err){
     console.log(err)

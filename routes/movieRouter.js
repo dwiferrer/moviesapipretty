@@ -6,24 +6,6 @@ const { connection: movies } = mongoose;
 const authenticate = require("../authenticate")
 const movieRouter = express.Router();
 
-
-//const jwtAuthz = require('express-jwt-authz');
-
-// var jwt = require('express-jwt');
-// var jwks = require('jwks-rsa');
-
-// var jwtCheck = jwt({
-//   secret: jwks.expressJwtSecret({
-//       cache: true,
-//       rateLimit: true,
-//       jwksRequestsPerMinute: 5,
-//       jwksUri: 'https://dwightferrer.auth0.com/.well-known/jwks.json'
-// }),
-// aud: 'https://test/api',
-// issuer: 'https://dwightferrer.auth0.com/',
-// algorithms: ['RS256']
-// });
-
 //GET MOVIES with proper link
 movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
   try {
@@ -373,3 +355,70 @@ movieRouter.delete("/delete/:id", authenticate.jwtCheck, async(req,res,next) => 
 });
 
 module.exports = movieRouter; 
+
+
+
+
+// app.use("/actors", (req, res) => {
+//   movies.db
+//   .collection("movieDetails")
+//   .find({director: "Wes Anderson"})
+//   .toArray()
+//   .then(result =>{
+//     res.json(result)
+//   })
+// });
+
+// //MOVIE WITH CORRECT LINK (SYNC)
+// movieRouter.get("/movies1", (req, res, next) => {
+//   const size = 10; // results per page
+//   const page = req.query.page // Page 
+//   mongoose.connection.db
+//   .collection("movieDetails")
+//   .find({})
+//   .sort({ year: -1 })
+//   .skip((size * page) - size)
+//   .limit(size)
+//   .toArray()
+//   .then((movies) => {
+//   var newArray = new Array()
+//   movies.forEach((arrayItem) => {
+//       var poster = arrayItem.poster
+//       var posterLink = poster.split("/")
+//       var image = ("https://" + posterLink[2] + '/' + posterLink[3]+ '/' + posterLink[4] + '/' + posterLink[5])
+//       var image = image
+//       var movieDetails = {
+//          title: arrayItem.title,
+//          poster: image
+//       }
+//       newArray.push(movieDetails)
+//     })
+//     res.json(newArray);
+// }, (err) => next(err))
+// .catch((err) => next(err)); 
+// });
+
+
+// //GET MOVIES NOT proper link
+// movieRouter.get("/movies2, async(req,res,next) => {
+//   var pageNo = parseInt(req.query.pageNo)
+//   var size = parseInt(req.query.size)
+//   var query = {}
+
+//   if(pageNo < 0 || pageNo === 0) {
+//         response = {"error" : true,"message" : "invalid page number, should start with 1"};
+//         return res.json(response)
+//   }
+//   query.skip = size * (pageNo - 1)
+//   query.limit = size
+  
+//   const movie =  await movies.db
+//     .collection("movieDetails")
+//     .find({}, { projection: { _id: 0, title:1, year: 1, poster: 1 }})
+//     .sort( { year: -1 } ) 
+//     .skip(query.skip)
+//     .limit(query.limit)
+//     .toArray();
+//     //response = {"error" : false,"message" : movie};
+//     res.json(movie);  
+// });

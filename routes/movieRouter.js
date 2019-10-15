@@ -8,22 +8,58 @@ const movieRouter = express.Router();
 
 //const Favorites = require("../models/favorites");
 
-movieRouter.post("/setuser", authenticate.jwtCheck, async(req,res,next) => {
-  const fave = await movies.db
+// HOME
+movieRouter.get("/home", authenticate.jwtCheck, (req,res,next) => {
+  movies.db
   .collection("favorites")
-  .insert({user: req.user.sub, faveMovies: []})
-  res.json({login: "success"});
-  res.redirect("/movies");
-})
+  .find({})
+  .toArray()
+  .then( async result =>{
+    let userList = []
+    result.forEach((user) => {
+      userList.push(user.user)
+    })
+  if (!userList.includes(req.user.sub)){
+    movies.db
+    .collection("favorites")
+    .insert({user: req.user.sub, faveMovies: []})
+  }
+  const movie =  await movies.db
+  .collection("movieDetails")
+  .find({})
+  .sort( { "tomato.rating": -1 } )
+  .limit(1)
+  .toArray();
+  
+  movie.forEach((item) => {
+    if (item.poster!=null)
+      item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
+  })
+  
+  const moviecount = await movies.db
+  .collection("movieDetails")
+  .find({})
+  .count()
+  
+  res.json({movie: movie, count: moviecount})
+  })
+});
 
-
+// ADD DELETE FAVE
 movieRouter.post("/favorites/:id", authenticate.jwtCheck, async(req,res,next) => {
   const fave = await movies.db
   .collection("favorites")
   .findOneAndUpdate({user: req.user.sub}, { $push: { faveMovies: req.params.id}})
   res.json({update: "success"})
-});
+})
+.delete("/favorites/:id", authenticate.jwtCheck, async(req,res,next) => {
+  const fave = await movies.db
+  .collection("favorites")
+  .findOneAndUpdate({user: req.user.sub}, { $pull: { faveMovies: req.params.id}})
+  res.json({delete: "success"})
+})
 
+// FAVE LIST
 movieRouter.get("/favorites", authenticate.jwtCheck, async(req,res,next) => {
   const fave = await movies.db
   .collection("favorites")
@@ -32,15 +68,6 @@ movieRouter.get("/favorites", authenticate.jwtCheck, async(req,res,next) => {
   .toArray()
   res.json(fave);
 });
-
-
-
-
-
-// movie = ["1"]
-
-// movie = [...movie, "this"]
-
 
 //GET MOVIES with proper link
 movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
@@ -134,43 +161,35 @@ movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
   }       
 });
 
-// HOME
-movieRouter.get("/home", authenticate.jwtCheck, async(req,res,next) => {
-  try{
-    if (req.query.size!=null){
-      var page = parseInt(req.query.page)
-      var size = parseInt(req.query.size)
-      const movie =  await movies.db
-      .collection("movieDetails")
-      .find({})
-      .sort( { "tomato.rating": -1 } ) 
-      .skip((page * size) - size)
-      .limit(size)
-      .toArray();
+// // HOME WITHOUT FAVORITES
+// movieRouter.get("/home", authenticate.jwtCheck, async(req,res,next) => {
+//   try {
+//     const fave = await movies.db
+//     .collection("favorites")
+//     .insert({user: req.user.sub, faveMovies: []})
 
-      movie.forEach((item) => {
-        if (item.poster!=null)
-          item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
-        })
+//     const movie =  await movies.db
+//     .collection("movieDetails")
+//     .find({})
+//     .sort( { "tomato.rating": -1 } )
+//     .limit(1)
+//     .toArray();
 
-      const moviecount = await movies.db
-      .collection("movieDetails")
-      .find({})
-      .count()
+//     movie.forEach((item) => {
+//       if (item.poster!=null)
+//         item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
+//       })
 
-      res.json({movie: movie, count: moviecount})  
-    } else {
-      const moviecount = await movies.db
-      .collection("movieDetails")
-      .find({})
-      .count()
+//     const moviecount = await movies.db
+//     .collection("movieDetails")
+//     .find({})
+//     .count()
 
-      res.json({count: moviecount})  
-     }
-  } catch (err){
-    console.log(err)
-  }     
-});
+//     res.json({movie: movie, count: moviecount})  
+//   } catch (err){
+//     console.log(err)
+//   }     
+// });
 
 // GET MOVIE ID
 movieRouter.get("/movies/:id", authenticate.jwtCheck, async(req,res,next) => {

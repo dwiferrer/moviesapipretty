@@ -6,6 +6,42 @@ const { connection: movies } = mongoose;
 const authenticate = require("../authenticate")
 const movieRouter = express.Router();
 
+//const Favorites = require("../models/favorites");
+
+movieRouter.post("/setuser", authenticate.jwtCheck, async(req,res,next) => {
+  const fave = await movies.db
+  .collection("favorites")
+  .insert({user: req.user.sub, faveMovies: []})
+  res.json({login: "success"});
+  res.redirect("/movies");
+})
+
+
+movieRouter.post("/favorites/:id", authenticate.jwtCheck, async(req,res,next) => {
+  const fave = await movies.db
+  .collection("favorites")
+  .findOneAndUpdate({user: req.user.sub}, { $push: { faveMovies: req.params.id}})
+  res.json({update: "success"})
+});
+
+movieRouter.get("/favorites", authenticate.jwtCheck, async(req,res,next) => {
+  const fave = await movies.db
+  .collection("favorites")
+  .find({ user: req.user.sub })
+  .sort( { title: 1 } )
+  .toArray()
+  res.json(fave);
+});
+
+
+
+
+
+// movie = ["1"]
+
+// movie = [...movie, "this"]
+
+
 //GET MOVIES with proper link
 movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
   try {
@@ -26,12 +62,12 @@ movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
           item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
         })
 
-      const moviecount = await movies.db
+      const movieCount = await movies.db
       .collection("movieDetails")
       .find({})
       .count()
 
-      res.json({movie: movie, count: moviecount})
+      res.json({movie: movie, count: movieCount})
     } else if (req.query.sort === "year") {
       const movie =  await movies.db
       .collection("movieDetails")
@@ -81,12 +117,17 @@ movieRouter.get("/movies", authenticate.jwtCheck, async(req,res,next) => {
       .limit(size)
       .toArray();
 
+      const movieCount = await movies.db
+      .collection("movieDetails")
+      .find({})
+      .count()
+
       movie.forEach((item) => {
         if (item.poster!=null)
           item.poster = item.poster.replace("http://ia.media-imdb.com", "https://m.media-amazon.com")
       })
-      
-      res.json({movie: movie, count: movie.length})
+
+      res.json({movie: movie, count: movieCount})
   }
   } catch (err){
     console.log(err)
@@ -357,8 +398,7 @@ movieRouter.delete("/delete/:id", authenticate.jwtCheck, async(req,res,next) => 
 module.exports = movieRouter; 
 
 
-
-
+// // (SYNC)
 // app.use("/actors", (req, res) => {
 //   movies.db
 //   .collection("movieDetails")
@@ -421,4 +461,19 @@ module.exports = movieRouter;
 //     .toArray();
 //     //response = {"error" : false,"message" : movie};
 //     res.json(movie);  
+// });
+
+
+// movieRouter.get("/home", async(req,res,next) => { 
+//   console.log(req.query.page)
+//   try {
+//     const moviecount = await movies.db
+//     .collection("movieDetails")
+//     .find({})
+//     .count()
+
+//     res.json({count: moviecount})  
+//   } catch (err){
+//     console.log(err)
+//   }     
 // });
